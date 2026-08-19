@@ -1,42 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../models/product_model.dart';
+import '../../providers/product_provider.dart';
 
-class MyAdsScreen extends StatefulWidget {
+class MyAdsScreen extends ConsumerWidget {
   const MyAdsScreen({super.key});
 
   @override
-  State<MyAdsScreen> createState() => _MyAdsScreenState();
-}
-
-class _MyAdsScreenState extends State<MyAdsScreen> {
-  final List<ProductModel> _myProducts = [
-    ProductModel(
-      id: 'demo_1',
-      title: 'iPhone 15 Pro Max 256GB Natural Titanium',
-      price: 13500000,
-      description: 'Ideal holatda, 1 oy ishlatilgan.',
-      category: 'electronics',
-      condition: 'yangi',
-      images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80'],
-      region: 'Toshkent shahri',
-      sellerId: 'user_1',
-      sellerName: 'Mening E\'lonim',
-      createdAt: DateTime.now(),
-      status: 'active',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final localProducts = ref.watch(localProductsProvider);
+
+    // Fallback sample user product if no local user product exists yet
+    final List<ProductModel> myProducts = localProducts.isNotEmpty
+        ? localProducts
+        : [
+            ProductModel(
+              id: 'demo_1',
+              title: 'iPhone 15 Pro Max 256GB Natural Titanium',
+              price: 13500000,
+              description: 'Ideal holatda, 1 oy ishlatilgan.',
+              category: 'electronics',
+              condition: 'yangi',
+              images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80'],
+              region: 'Toshkent shahri',
+              sellerId: 'user_1',
+              sellerName: 'Mening E\'lonim',
+              createdAt: DateTime.now(),
+              status: 'active',
+            ),
+          ];
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
         title: const Text('Mening e\'lonlarim'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            onPressed: () => context.push('/add-product'),
+          ),
+        ],
       ),
-      body: _myProducts.isEmpty
+      body: myProducts.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -51,7 +68,7 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
-                      onPressed: () => context.go('/add-product'),
+                      onPressed: () => context.push('/add-product'),
                       icon: const Icon(Icons.add_rounded),
                       label: const Text('Birinchi e\'lonni joylash'),
                     ),
@@ -61,9 +78,13 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _myProducts.length,
+              itemCount: myProducts.length,
               itemBuilder: (context, index) {
-                final product = _myProducts[index];
+                final product = myProducts[index];
+                final image = product.images.isNotEmpty
+                    ? product.images.first
+                    : 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80';
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   child: Padding(
@@ -73,10 +94,16 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.network(
-                            product.images.first,
+                            image,
                             width: 90,
                             height: 90,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              width: 90,
+                              height: 90,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.image),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -116,9 +143,10 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
                         IconButton(
                           icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
                           onPressed: () {
-                            setState(() {
-                              _myProducts.removeAt(index);
-                            });
+                            ref.read(localProductsProvider.notifier).removeProduct(product.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('E\'lon o\'chirildi')),
+                            );
                           },
                         ),
                       ],
@@ -130,3 +158,4 @@ class _MyAdsScreenState extends State<MyAdsScreen> {
     );
   }
 }
+

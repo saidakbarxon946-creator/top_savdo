@@ -7,7 +7,6 @@ import '../../widgets/product_card.dart';
 import '../../widgets/category_item.dart';
 import '../../widgets/carousel_banner.dart';
 import '../../providers/product_provider.dart';
-import '../../models/product_model.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -16,7 +15,6 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    final productsAsync = ref.watch(productsStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -156,31 +154,64 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Yangi e\'lonlar',
+                    selectedCategory == 'all'
+                        ? 'Yangi e\'lonlar'
+                        : '${_getCategoryName(selectedCategory)} e\'lonlari',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
                   ),
-                  Text(
-                    'Barchasini ko\'rish',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                  if (selectedCategory != 'all')
+                    TextButton(
+                      onPressed: () {
+                        ref.read(selectedCategoryProvider.notifier).state = 'all';
+                      },
+                      child: const Text('Barchasiga qaytish'),
                     ),
-                  ),
                 ],
               ),
             ),
           ),
 
-          // Products Grid View
-          productsAsync.when(
-            data: (products) {
-              final displayProducts = products.isEmpty
-                  ? _getSampleProducts()
-                  : products;
+          // Products Grid View with STRICT Category Filtering
+          Builder(
+            builder: (context) {
+              final allProds = ref.watch(allProductsProvider);
+
+              // STRICT Category Filtering
+              final filteredProducts = selectedCategory == 'all'
+                  ? allProds
+                  : allProds.where((p) => p.category == selectedCategory).toList();
+
+              if (filteredProducts.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.folder_open_rounded, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Ushbu kategoriyada hali e\'lonlar mavjud emas',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => context.push('/add-product'),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Birinchi bo\'lib e\'lon joylash'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
 
               return SliverPadding(
                 padding: const EdgeInsets.all(16),
@@ -193,89 +224,27 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final product = displayProducts[index];
+                      final product = filteredProducts[index];
                       return ProductCard(
                         product: product,
                         onTap: () => context.push('/product/${product.id}'),
-                        onFavoriteTap: () {},
                       );
                     },
-                    childCount: displayProducts.length,
+                    childCount: filteredProducts.length,
                   ),
                 ),
               );
             },
-            loading: () => const SliverFillRemaining(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (error, stack) => SliverFillRemaining(
-              child: Center(
-                child: Text('Xatolik yuz berdi: $error'),
-              ),
-            ),
           ),
         ],
       ),
     );
   }
 
-  /// Demo Sample Products for initial display
-  List<ProductModel> _getSampleProducts() {
-    return [
-      ProductModel(
-        id: 'demo_1',
-        title: 'iPhone 15 Pro Max 256GB Natural Titanium',
-        price: 13500000,
-        description: 'Ideal holatda, 1 oy ishlatilgan. Karobka dokument bor.',
-        category: 'electronics',
-        condition: 'yangi',
-        images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80'],
-        region: 'Toshkent shahri',
-        sellerId: 'seller_1',
-        sellerName: 'Javohir',
-        createdAt: DateTime.now(),
-      ),
-      ProductModel(
-        id: 'demo_2',
-        title: 'Chevrolet Cobalt 2-pozitsiya Yevro 2023',
-        price: 142000000,
-        description: 'Probeg 15,000 km. Kraska toza. Chexol va polik qo\'yilgan.',
-        category: 'vehicles',
-        condition: 'ishlatilgan',
-        images: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80'],
-        region: 'Samarqand',
-        sellerId: 'seller_2',
-        sellerName: 'Sardor',
-        createdAt: DateTime.now(),
-      ),
-      ProductModel(
-        id: 'demo_3',
-        title: 'MacBook Air M2 8GB / 256GB Space Gray',
-        price: 11200000,
-        description: 'Holati a\'lo. Sikl zaryad 45 marta. Aybi yo\'q.',
-        category: 'electronics',
-        condition: 'yangi',
-        images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80'],
-        region: 'Toshkent shahri',
-        sellerId: 'seller_3',
-        sellerName: 'Davron',
-        createdAt: DateTime.now(),
-      ),
-      ProductModel(
-        id: 'demo_4',
-        title: 'Nike Air Jordan 1 Retro High Original (Size 42)',
-        price: 950000,
-        description: 'Original krossovka, Amerikadan kelgan.',
-        category: 'fashion',
-        condition: 'yangi',
-        images: ['https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=600&q=80'],
-        region: 'Farg\'ona',
-        sellerId: 'seller_4',
-        sellerName: 'Bekzod',
-        createdAt: DateTime.now(),
-      ),
-    ];
+  String _getCategoryName(String id) {
+    for (final cat in AppConstants.defaultCategories) {
+      if (cat['id'] == id) return cat['name'] as String;
+    }
+    return 'Saralangan';
   }
 }

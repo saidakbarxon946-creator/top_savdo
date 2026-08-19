@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -7,16 +8,17 @@ import '../../models/product_model.dart';
 import '../../models/comment_model.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
+import '../../providers/product_provider.dart';
 
-class ProductDetailScreen extends StatefulWidget {
+class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
   const ProductDetailScreen({super.key, required this.productId});
 
   @override
-  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+  ConsumerState<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   ProductModel? _product;
   bool _isLoading = true;
@@ -48,14 +50,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _loadProduct() async {
-    final prod = await _firestoreService.getProductById(widget.productId);
+    final allProds = ref.read(allProductsProvider);
+    final match = allProds.firstWhere(
+      (p) => p.id == widget.productId,
+      orElse: () => _getDemoProduct(widget.productId),
+    );
+
+    final firestoreProd = await _firestoreService.getProductById(widget.productId);
     setState(() {
-      _product = prod ?? _getDemoProduct(widget.productId);
+      _product = firestoreProd ?? match;
       _isLoading = false;
     });
   }
 
   ProductModel _getDemoProduct(String id) {
+    final demos = getSampleProducts();
+    for (final p in demos) {
+      if (p.id == id) return p;
+    }
     return ProductModel(
       id: id,
       title: 'iPhone 15 Pro Max 256GB Natural Titanium',
@@ -65,7 +77,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       condition: 'yangi',
       images: [
         'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
       ],
       region: 'Toshkent shahri',
       sellerId: 'seller_123',
@@ -187,15 +198,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
         title: const Text('E\'lon batafsil'),
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Havola nusxalandi')),
+              );
+            },
           ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border_rounded),
-            onPressed: () {},
+          Consumer(
+            builder: (context, ref, child) {
+              final isFav = ref.watch(favoritesProvider).contains(widget.productId);
+              return IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFav ? Colors.redAccent : null,
+                ),
+                onPressed: () {
+                  ref.read(favoritesProvider.notifier).toggleFavorite(widget.productId);
+                },
+              );
+            },
           ),
         ],
       ),
@@ -492,7 +527,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => context.push('/chats'),
+                    onPressed: () => context.go('/chats'),
                     icon: const Icon(Icons.chat_bubble_outline_rounded),
                     label: const Text('Chatda yozish'),
                   ),

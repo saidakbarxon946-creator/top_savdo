@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../models/product_model.dart';
 import '../core/constants.dart';
 import '../core/theme.dart';
+import '../providers/product_provider.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends ConsumerWidget {
   final ProductModel product;
   final VoidCallback onTap;
   final VoidCallback? onFavoriteTap;
-  final bool isFavorite;
+  final bool? isFavorite;
 
   const ProductCard({
     super.key,
     required this.product,
     required this.onTap,
     this.onFavoriteTap,
-    this.isFavorite = false,
+    this.isFavorite,
   });
 
   String _formatPrice(double price) {
@@ -25,11 +27,14 @@ class ProductCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final imageUrl = product.images.isNotEmpty
         ? product.images.first
         : AppConstants.defaultProductImage;
+
+    final favoritesState = ref.watch(favoritesProvider);
+    final bool favorited = isFavorite ?? favoritesState.contains(product.id);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -81,26 +86,31 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                   // Favorite Button
-                  if (onFavoriteTap != null)
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: GestureDetector(
-                        onTap: onFavoriteTap,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isFavorite ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                            color: isFavorite ? Colors.redAccent : Colors.grey[600],
-                            size: 18,
-                          ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (onFavoriteTap != null) {
+                          onFavoriteTap!();
+                        } else {
+                          ref.read(favoritesProvider.notifier).toggleFavorite(product.id);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          favorited ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                          color: favorited ? Colors.redAccent : Colors.grey[600],
+                          size: 18,
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -153,3 +163,4 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
+

@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../models/product_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
 
-class AddProductScreen extends StatefulWidget {
+class AddProductScreen extends ConsumerStatefulWidget {
   const AddProductScreen({super.key});
 
   @override
-  State<AddProductScreen> createState() => _AddProductScreenState();
+  ConsumerState<AddProductScreen> createState() => _AddProductScreenState();
 }
 
-class _AddProductScreenState extends State<AddProductScreen> {
+class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
@@ -57,7 +61,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final user = _authService.currentUser;
-    if (user == null) {
+    final currentUserState = ref.read(currentUserProvider);
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    final savedEmail = prefs.getString('logged_in_email');
+
+    final bool isLoggedIn = user != null || currentUserState != null || (savedEmail != null && savedEmail.isNotEmpty);
+
+    if (!isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('E\'lon joylash uchun ilovaga kiring (Login qiling).'),
@@ -74,6 +85,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     try {
       final double price = double.tryParse(_priceController.text.replaceAll(' ', '')) ?? 0;
+      final String sellerId = user?.uid ?? currentUserState?.id ?? 'user_123';
+      final String sellerName = currentUserState?.name ?? user?.displayName ?? savedEmail?.split('@').first ?? 'Foydalanuvchi';
+
       final newProduct = ProductModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text.trim(),
@@ -83,15 +97,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
         condition: _selectedCondition,
         images: _selectedImages.map((e) => e.path).toList(),
         region: _selectedRegion,
-        sellerId: user.uid,
-        sellerName: user.displayName ?? user.email?.split('@').first ?? 'Foydalanuvchi',
+        sellerId: sellerId,
+        sellerName: sellerName,
         sellerPhone: _phoneController.text.trim(),
         year: _yearController.text.trim(),
         mileage: _mileageController.text.trim(),
         createdAt: DateTime.now(),
       );
 
-      await _firestoreService.addProduct(newProduct);
+      // Save to Firestore
+      try {
+        await _firestoreService.addProduct(newProduct);
+      } catch (_) {}
+
+      // Instantly add to local Riverpod state so it displays on Home Screen under category
+      ref.read(localProductsProvider.notifier).addProduct(newProduct);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
