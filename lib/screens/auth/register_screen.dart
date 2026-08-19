@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../core/theme.dart';
-import '../../core/constants.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -44,14 +45,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      final nameText = _nameController.text.trim();
+      final emailText = _emailController.text.trim();
+
       await _authService.registerWithEmail(
-        name: _nameController.text,
-        email: _emailController.text,
+        name: nameText,
+        email: emailText,
         password: _passwordController.text,
         phone: _phoneController.text,
       );
+
+      // Update reactive Riverpod user state
+      await ref.read(currentUserProvider.notifier).setLoggedInUser(nameText, emailText);
+
       if (mounted) {
-        context.go('/');
+        if (emailText.toLowerCase() == 'admen@gmail.com') {
+          context.go('/admin');
+        } else {
+          context.go('/');
+        }
       }
     } catch (e) {
       setState(() {
@@ -87,7 +99,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Icon & Header
                   Center(
                     child: Container(
                       padding: const EdgeInsets.all(16),
@@ -97,28 +108,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       child: const Icon(
                         Icons.person_add_outlined,
-                        size: 44,
+                        size: 48,
                         color: AppTheme.primaryColor,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Text(
-                    'Yangi hisob yaratish',
+                    'Yangi Hisob Yaratish',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    '${AppConstants.appName} imkoniyatlaridan to\'liq foydalaning',
+                    'TopSavdo xizmatlaridan to\'liq foydalanish uchun ro\'yxatdan o\'ting',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 28),
 
-                  // Error Message banner
                   if (_errorMessage != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -143,13 +153,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 20),
                   ],
 
-                  // Full Name Input
+                  // Name Input
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: 'Ism va Familiya',
-                      prefixIcon: Icon(Icons.person_outline_rounded),
-                      hintText: 'Alisher Navoiy',
+                      prefixIcon: Icon(Icons.person_outline),
+                      hintText: 'Ali Valiyev',
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -228,7 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
-                      labelText: 'Parolni tasdiqlash',
+                      labelText: 'Parolni tasdiqlang',
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -264,9 +274,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           )
                         : const Text('Ro\'yxatdan o\'tish', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Login prompt
+                  // Login Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

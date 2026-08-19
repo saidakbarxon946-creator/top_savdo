@@ -14,8 +14,7 @@ class ProfileScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentLocale = ref.watch(localeProvider);
-    final userAsync = ref.watch(currentUserModelProvider);
-    final user = userAsync.value;
+    final user = ref.watch(currentUserModelProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -26,8 +25,8 @@ class ProfileScreen extends ConsumerWidget {
               icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
               tooltip: 'Tizimdan chiqish',
               onPressed: () async {
+                await ref.read(currentUserProvider.notifier).logout();
                 await ref.read(authServiceProvider).signOut();
-                ref.invalidate(currentUserModelProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Tizimdan chiqdingiz.')),
@@ -44,98 +43,96 @@ class ProfileScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Header Card
-            userAsync.when(
-              data: (userModel) {
-                if (userModel == null) {
+            if (user == null)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.grey,
+                        child: Icon(Icons.person, color: Colors.white),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Mehmon foydalanuvchi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const SizedBox(height: 4),
+                            Text('E\'lon joylash va profildan foydalanish uchun hisobga kiring', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => context.push('/login'),
+                        child: const Text('Kirish'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else ...[
+              Builder(
+                builder: (context) {
+                  final name = user.name.isNotEmpty ? user.name : 'Foydalanuvchi';
+                  final email = user.email;
+                  final isAdmin = user.email.toLowerCase() == 'admen@gmail.com' || user.role == 'admin';
+
                   return Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
                         children: [
-                          const CircleAvatar(
-                            radius: 28,
-                            backgroundColor: Colors.grey,
-                            child: Icon(Icons.person, color: Colors.white),
+                          CircleAvatar(
+                            radius: 32,
+                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Mehmon foydalanuvchi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                    ),
+                                    if (isAdmin)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.deepOrangeAccent.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Text(
+                                          'ADMIN',
+                                          style: TextStyle(color: Colors.deepOrangeAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                                 const SizedBox(height: 4),
-                                Text('E\'lon joylash va profildan foydalanish uchun hisobga kiring', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+                                Text(email, style: theme.textTheme.bodyMedium),
                               ],
                             ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => context.push('/login'),
-                            child: const Text('Kirish'),
                           ),
                         ],
                       ),
                     ),
                   );
-                }
-
-                final name = userModel.name.isNotEmpty ? userModel.name : 'Foydalanuvchi';
-                final email = userModel.email;
-                final isAdmin = userModel.email.toLowerCase() == 'admen@gmail.com' || userModel.role == 'admin';
-
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-                          child: Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                  ),
-                                  if (isAdmin)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.deepOrangeAccent.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Text(
-                                        'ADMIN',
-                                        style: TextStyle(color: Colors.deepOrangeAccent, fontSize: 10, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(email, style: theme.textTheme.bodyMedium),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Text('Error: $err'),
-            ),
+                },
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Settings Header
@@ -245,8 +242,8 @@ class ProfileScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () async {
+                    await ref.read(currentUserProvider.notifier).logout();
                     await ref.read(authServiceProvider).signOut();
-                    ref.invalidate(currentUserModelProvider);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Tizimdan chiqdingiz.')),
