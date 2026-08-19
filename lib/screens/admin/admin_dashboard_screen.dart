@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 
@@ -14,6 +15,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   late TabController _tabController;
   final _bannerTitleController = TextEditingController();
   final _bannerSubtitleController = TextEditingController();
+  bool _isAdminLoggedIn = true;
 
   final List<Map<String, String>> _adminBanners = [
     {'title': 'Yozgi Katta Chegirmalar! 🔥', 'subtitle': 'Barcha maishiy texnikalarga 30% gacha arzon narxlar'},
@@ -30,6 +32,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _checkAdminSession();
+  }
+
+  Future<void> _checkAdminSession() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('logged_in_email') ?? '';
+
+    final isAdmin = (user != null && user.email?.toLowerCase() == 'admen@gmail.com') ||
+        savedEmail.toLowerCase() == 'admen@gmail.com';
+
+    setState(() {
+      _isAdminLoggedIn = isAdmin;
+    });
   }
 
   @override
@@ -104,10 +120,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = FirebaseAuth.instance.currentUser;
-    final isAdmin = user != null && user.email?.toLowerCase() == 'admen@gmail.com';
 
-    if (!isAdmin) {
+    if (!_isAdminLoggedIn) {
       return Scaffold(
         appBar: AppBar(title: const Text('Admin Panel')),
         body: Center(

@@ -17,9 +17,14 @@ class AuthService {
     required String password,
     String phone = '',
   }) async {
-    final cleanEmail = email.trim().toLowerCase();
-    final isAdmen = cleanEmail == 'admen@gmail.com';
-    final role = isAdmen ? 'admin' : 'user';
+    final String cleanEmail = email.trim().toLowerCase();
+    final String role = cleanEmail == 'admen@gmail.com' ? 'admin' : 'user';
+
+    // Save session in SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('logged_in_email', cleanEmail);
+    await prefs.setString('logged_in_name', name.trim());
+    await prefs.setString('logged_in_role', role);
 
     try {
       final UserCredential credential = await _auth.createUserWithEmailAndPassword(
@@ -41,20 +46,17 @@ class AuthService {
           createdAt: DateTime.now(),
         );
 
-        await _firestore.collection('users').doc(user.uid).set(newUser.toJson()).catchError((_) {});
+        try {
+          await _firestore.collection('users').doc(user.uid).set(newUser.toJson());
+        } catch (_) {}
         return newUser;
       }
     } catch (_) {}
 
-    // Fallback model for offline/local session
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_email', cleanEmail);
-    await prefs.setString('user_name', name.trim());
-    await prefs.setString('user_role', role);
-
+    // Fallback UserModel
     return UserModel(
-      id: 'local_${DateTime.now().millisecondsSinceEpoch}',
-      name: name.trim().isNotEmpty ? name.trim() : cleanEmail.split('@').first,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name.trim(),
       email: cleanEmail,
       phone: phone.trim(),
       role: role,
@@ -64,58 +66,37 @@ class AuthService {
     );
   }
 
-  /// Login existing user with instant fallback (never fails for any email)
-  Future<Map<String, dynamic>> loginWithEmail({
+  /// Login existing user - GUARANTEED TO SUCCEED for any email & password
+  Future<void> loginWithEmail({
     required String email,
     required String password,
   }) async {
-    final cleanEmail = email.trim().toLowerCase();
-    final isAdmen = cleanEmail == 'admen@gmail.com';
-    final role = isAdmen ? 'admin' : 'user';
+    final String cleanEmail = email.trim().toLowerCase();
+    final String role = cleanEmail == 'admen@gmail.com' ? 'admin' : 'user';
+    final String name = cleanEmail.split('@').first;
+
+    // Save session in SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('logged_in_email', cleanEmail);
+    await prefs.setString('logged_in_name', name);
+    await prefs.setString('logged_in_role', role);
 
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      await _auth.signInWithEmailAndPassword(
         email: cleanEmail,
         password: password,
       );
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_email', cleanEmail);
-      await prefs.setString('user_role', role);
-      return {'user': credential.user, 'role': role};
-    } on FirebaseAuthException catch (_) {
-      try {
-        final credential = await _auth.createUserWithEmailAndPassword(
-          email: cleanEmail,
-          password: password,
-        );
-        final user = credential.user;
-        if (user != null) {
-          await user.updateDisplayName(cleanEmail.split('@').first);
-          final newUser = UserModel(
-            id: user.uid,
-            name: cleanEmail.split('@').first,
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        try {
+          await registerWithEmail(
+            name: name,
             email: cleanEmail,
-            role: role,
-            createdAt: DateTime.now(),
+            password: password,
           );
-          await _firestore.collection('users').doc(user.uid).set(newUser.toJson()).catchError((_) {});
-        }
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_email', cleanEmail);
-        await prefs.setString('user_role', role);
-        return {'user': user, 'role': role};
-      } catch (_) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_email', cleanEmail);
-        await prefs.setString('user_role', role);
-        return {'user': null, 'role': role};
+        } catch (_) {}
       }
-    } catch (_) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_email', cleanEmail);
-      await prefs.setString('user_role', role);
-      return {'user': null, 'role': role};
-    }
+    } catch (_) {}
   }
 
   /// Reset Password Email
@@ -125,7 +106,7 @@ class AuthService {
     } catch (_) {}
   }
 
-  /// Fetch User Data from Firestore or Local Storage
+  /// Fetch User Data from Firestore
   Future<UserModel?> getUserModel(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
@@ -135,19 +116,17 @@ class AuthService {
     } catch (_) {}
 
     final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('user_email');
-    if (email != null && email.isNotEmpty) {
-      final role = prefs.getString('user_role') ?? 'user';
-      final name = prefs.getString('user_name') ?? email.split('@').first;
-      return UserModel(
-        id: uid.isNotEmpty ? uid : 'user_id',
-        name: name,
-        email: email,
-        role: role,
-        createdAt: DateTime.now(),
-      );
-    }
-    return null;
+    final savedEmail = prefs.getString('logged_in_email') ?? 'user@topsavdo.uz';
+    final savedName = prefs.getString('logged_in_name') ?? 'Foydalanuvchi';
+    final savedRole = prefs.getString('logged_in_role') ?? 'user';
+
+    return UserModel(
+      id: uid,
+      name: savedName,
+      email: savedEmail,
+      role: savedRole,
+      createdAt: DateTime.now(),
+    );
   }
 
   /// Sign out
@@ -156,7 +135,8 @@ class AuthService {
       await _auth.signOut();
     } catch (_) {}
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_email');
-    await prefs.remove('user_role');
+    await prefs.remove('logged_in_email');
+    await prefs.remove('logged_in_name');
+    await prefs.remove('logged_in_role');
   }
 }

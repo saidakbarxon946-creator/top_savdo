@@ -37,13 +37,13 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final result = await _authService.loginWithEmail(
-        email: _emailController.text,
+      final emailText = _emailController.text.trim();
+      await _authService.loginWithEmail(
+        email: emailText,
         password: _passwordController.text,
       );
       if (mounted) {
-        final role = result['role'] as String? ?? 'user';
-        if (role == 'admin' || _emailController.text.trim().toLowerCase() == 'admen@gmail.com') {
+        if (emailText.toLowerCase() == 'admen@gmail.com') {
           context.go('/admin');
         } else {
           context.go('/');
