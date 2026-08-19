@@ -1,4 +1,4 @@
-# 🛒 TopSavdo — 0 dan Pro darajasigacha bosqichma-bosqich qurilish reja(y)i
+ # 🛒 TopSavdo — 0 dan Pro darajasigacha bosqichma-bosqich qurilish reja(y)i
 
 > **Qanday ishlatiladi:** Har bir bosqich alohida "prompt" ko'rinishida yozilgan.
 > Har safar bitta bosqichni AI kodlash yordamchisiga (Claude Code, Cursor, va h.k.) yoki o'zingizga vazifa qilib bering, tugagach keyingisiga o'ting. Oldingi bosqich ishlamasdan keyingisiga o'tmang — bu texnik qarzni oldini oladi.

@@ -19,6 +19,8 @@ class ProductModel with _$ProductModel {
     required String sellerId,
     required String sellerName,
     @Default('') String sellerPhone,
+    @Default('') String year, // e.g. '2023'
+    @Default('') String mileage, // e.g. '45 000 km'
     @TimestampConverter() required DateTime createdAt,
     @Default('active') String status, // 'active' | 'pending' | 'sold'
   }) = _ProductModel;

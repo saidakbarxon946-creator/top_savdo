@@ -34,6 +34,8 @@ mixin _$ProductModel {
   String get sellerId => throw _privateConstructorUsedError;
   String get sellerName => throw _privateConstructorUsedError;
   String get sellerPhone => throw _privateConstructorUsedError;
+  String get year => throw _privateConstructorUsedError; // e.g. '2023'
+  String get mileage => throw _privateConstructorUsedError; // e.g. '45 000 km'
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
@@ -68,6 +70,8 @@ abstract class $ProductModelCopyWith<$Res> {
     String sellerId,
     String sellerName,
     String sellerPhone,
+    String year,
+    String mileage,
     @TimestampConverter() DateTime createdAt,
     String status,
   });
@@ -100,6 +104,8 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
     Object? sellerId = null,
     Object? sellerName = null,
     Object? sellerPhone = null,
+    Object? year = null,
+    Object? mileage = null,
     Object? createdAt = null,
     Object? status = null,
   }) {
@@ -153,6 +159,14 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
                 ? _value.sellerPhone
                 : sellerPhone // ignore: cast_nullable_to_non_nullable
                       as String,
+            year: null == year
+                ? _value.year
+                : year // ignore: cast_nullable_to_non_nullable
+                      as String,
+            mileage: null == mileage
+                ? _value.mileage
+                : mileage // ignore: cast_nullable_to_non_nullable
+                      as String,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -189,6 +203,8 @@ abstract class _$$ProductModelImplCopyWith<$Res>
     String sellerId,
     String sellerName,
     String sellerPhone,
+    String year,
+    String mileage,
     @TimestampConverter() DateTime createdAt,
     String status,
   });
@@ -220,6 +236,8 @@ class __$$ProductModelImplCopyWithImpl<$Res>
     Object? sellerId = null,
     Object? sellerName = null,
     Object? sellerPhone = null,
+    Object? year = null,
+    Object? mileage = null,
     Object? createdAt = null,
     Object? status = null,
   }) {
@@ -273,6 +291,14 @@ class __$$ProductModelImplCopyWithImpl<$Res>
             ? _value.sellerPhone
             : sellerPhone // ignore: cast_nullable_to_non_nullable
                   as String,
+        year: null == year
+            ? _value.year
+            : year // ignore: cast_nullable_to_non_nullable
+                  as String,
+        mileage: null == mileage
+            ? _value.mileage
+            : mileage // ignore: cast_nullable_to_non_nullable
+                  as String,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -302,6 +328,8 @@ class _$ProductModelImpl implements _ProductModel {
     required this.sellerId,
     required this.sellerName,
     this.sellerPhone = '',
+    this.year = '',
+    this.mileage = '',
     @TimestampConverter() required this.createdAt,
     this.status = 'active',
   }) : _images = images;
@@ -346,6 +374,14 @@ class _$ProductModelImpl implements _ProductModel {
   @JsonKey()
   final String sellerPhone;
   @override
+  @JsonKey()
+  final String year;
+  // e.g. '2023'
+  @override
+  @JsonKey()
+  final String mileage;
+  // e.g. '45 000 km'
+  @override
   @TimestampConverter()
   final DateTime createdAt;
   @override
@@ -354,7 +390,7 @@ class _$ProductModelImpl implements _ProductModel {
 
   @override
   String toString() {
-    return 'ProductModel(id: $id, title: $title, price: $price, description: $description, category: $category, condition: $condition, images: $images, region: $region, city: $city, sellerId: $sellerId, sellerName: $sellerName, sellerPhone: $sellerPhone, createdAt: $createdAt, status: $status)';
+    return 'ProductModel(id: $id, title: $title, price: $price, description: $description, category: $category, condition: $condition, images: $images, region: $region, city: $city, sellerId: $sellerId, sellerName: $sellerName, sellerPhone: $sellerPhone, year: $year, mileage: $mileage, createdAt: $createdAt, status: $status)';
   }
 
   @override
@@ -380,6 +416,8 @@ class _$ProductModelImpl implements _ProductModel {
                 other.sellerName == sellerName) &&
             (identical(other.sellerPhone, sellerPhone) ||
                 other.sellerPhone == sellerPhone) &&
+            (identical(other.year, year) || other.year == year) &&
+            (identical(other.mileage, mileage) || other.mileage == mileage) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.status, status) || other.status == status));
@@ -401,6 +439,8 @@ class _$ProductModelImpl implements _ProductModel {
     sellerId,
     sellerName,
     sellerPhone,
+    year,
+    mileage,
     createdAt,
     status,
   );
@@ -433,6 +473,8 @@ abstract class _ProductModel implements ProductModel {
     required final String sellerId,
     required final String sellerName,
     final String sellerPhone,
+    final String year,
+    final String mileage,
     @TimestampConverter() required final DateTime createdAt,
     final String status,
   }) = _$ProductModelImpl;
@@ -464,6 +506,10 @@ abstract class _ProductModel implements ProductModel {
   String get sellerName;
   @override
   String get sellerPhone;
+  @override
+  String get year; // e.g. '2023'
+  @override
+  String get mileage; // e.g. '45 000 km'
   @override
   @TimestampConverter()
   DateTime get createdAt;

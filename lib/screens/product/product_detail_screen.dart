@@ -319,6 +319,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           ],
                         ),
+
+                        // Specs Row: Year, Mileage, Phone
+                        if (product.year.isNotEmpty || product.mileage.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            children: [
+                              if (product.year.isNotEmpty)
+                                Chip(
+                                  avatar: const Icon(Icons.calendar_today_outlined, size: 16),
+                                  label: Text('Yili: ${product.year}'),
+                                ),
+                              if (product.mileage.isNotEmpty)
+                                Chip(
+                                  avatar: const Icon(Icons.speed_outlined, size: 16),
+                                  label: Text('Probeg: ${product.mileage}'),
+                                ),
+                            ],
+                          ),
+                        ],
                         const Divider(height: 32),
 
                         // Description

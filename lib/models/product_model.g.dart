@@ -24,6 +24,8 @@ _$ProductModelImpl _$$ProductModelImplFromJson(Map<String, dynamic> json) =>
       sellerId: json['sellerId'] as String,
       sellerName: json['sellerName'] as String,
       sellerPhone: json['sellerPhone'] as String? ?? '',
+      year: json['year'] as String? ?? '',
+      mileage: json['mileage'] as String? ?? '',
       createdAt: const TimestampConverter().fromJson(json['createdAt']),
       status: json['status'] as String? ?? 'active',
     );
@@ -42,6 +44,8 @@ Map<String, dynamic> _$$ProductModelImplToJson(_$ProductModelImpl instance) =>
       'sellerId': instance.sellerId,
       'sellerName': instance.sellerName,
       'sellerPhone': instance.sellerPhone,
+      'year': instance.year,
+      'mileage': instance.mileage,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'status': instance.status,
     };
