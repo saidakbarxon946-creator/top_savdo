@@ -106,7 +106,7 @@ class AuthService {
     } catch (_) {}
   }
 
-  /// Fetch User Data from Firestore
+  /// Fetch User Data from Firestore or SharedPreferences
   Future<UserModel?> getUserModel(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
@@ -115,13 +115,20 @@ class AuthService {
       }
     } catch (_) {}
 
+    return await getSavedUserModel();
+  }
+
+  /// Fetch Saved User Model from SharedPreferences
+  Future<UserModel?> getSavedUserModel() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('logged_in_email') ?? 'user@topsavdo.uz';
-    final savedName = prefs.getString('logged_in_name') ?? 'Foydalanuvchi';
-    final savedRole = prefs.getString('logged_in_role') ?? 'user';
+    final savedEmail = prefs.getString('logged_in_email');
+    if (savedEmail == null || savedEmail.isEmpty) return null;
+
+    final savedName = prefs.getString('logged_in_name') ?? savedEmail.split('@').first;
+    final savedRole = prefs.getString('logged_in_role') ?? (savedEmail == 'admen@gmail.com' ? 'admin' : 'user');
 
     return UserModel(
-      id: uid,
+      id: 'saved_user',
       name: savedName,
       email: savedEmail,
       role: savedRole,
@@ -129,7 +136,7 @@ class AuthService {
     );
   }
 
-  /// Sign out
+  /// Sign out completely
   Future<void> signOut() async {
     try {
       await _auth.signOut();

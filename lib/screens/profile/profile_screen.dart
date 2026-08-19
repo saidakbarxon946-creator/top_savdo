@@ -15,21 +15,24 @@ class ProfileScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final currentLocale = ref.watch(localeProvider);
     final userAsync = ref.watch(currentUserModelProvider);
-    final authUser = ref.watch(authStateProvider).value;
+    final user = userAsync.value;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil va Sozlamalar'),
         actions: [
-          if (authUser != null)
+          if (user != null)
             IconButton(
               icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+              tooltip: 'Tizimdan chiqish',
               onPressed: () async {
                 await ref.read(authServiceProvider).signOut();
+                ref.invalidate(currentUserModelProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Tizimdan chiqdingiz.')),
                   );
+                  context.go('/login');
                 }
               },
             ),
@@ -41,78 +44,98 @@ class ProfileScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Header Card
-            if (authUser != null)
-              userAsync.when(
-                data: (user) {
-                  final name = user?.name ?? authUser.displayName ?? 'Foydalanuvchi';
-                  final email = user?.email ?? authUser.email ?? '';
-
+            userAsync.when(
+              data: (userModel) {
+                if (userModel == null) {
                   return Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
+                          const CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.grey,
+                            child: Icon(Icons.person, color: Colors.white),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                const Text('Mehmon foydalanuvchi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 const SizedBox(height: 4),
-                                Text(email, style: theme.textTheme.bodyMedium),
+                                Text('E\'lon joylash va profildan foydalanish uchun hisobga kiring', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
                               ],
                             ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => context.push('/login'),
+                            child: const Text('Kirish'),
                           ),
                         ],
                       ),
                     ),
                   );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Text('Error: $err'),
-              )
-            else
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.grey,
-                        child: Icon(Icons.person, color: Colors.white),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Mehmon foydalanuvchi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            const SizedBox(height: 4),
-                            Text('E\'lon joylash uchun hisobingizga kiring', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
-                          ],
+                }
+
+                final name = userModel.name.isNotEmpty ? userModel.name : 'Foydalanuvchi';
+                final email = userModel.email;
+                final isAdmin = userModel.email.toLowerCase() == 'admen@gmail.com' || userModel.role == 'admin';
+
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
                         ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => context.push('/login'),
-                        child: const Text('Kirish'),
-                      ),
-                    ],
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                  ),
+                                  if (isAdmin)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.deepOrangeAccent.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'ADMIN',
+                                        style: TextStyle(color: Colors.deepOrangeAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(email, style: theme.textTheme.bodyMedium),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Text('Error: $err'),
+            ),
             const SizedBox(height: 24),
 
             // Settings Header
@@ -199,15 +222,42 @@ class ProfileScreen extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => context.push('/contact'),
             ),
-            if (authUser != null && authUser.email?.toLowerCase() == 'admen@gmail.com') ...[
+            if (user != null && (user.email.toLowerCase() == 'admen@gmail.com' || user.role == 'admin')) ...[
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.admin_panel_settings_outlined, color: Colors.deepOrange),
                 title: const Text('Admin Panel'),
+                subtitle: const Text('Karusel banner va postlarni boshqarish'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/admin'),
               ),
             ],
+
+            const SizedBox(height: 24),
+            // Explicit Sign Out Button in Profile
+            if (user != null)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () async {
+                    await ref.read(authServiceProvider).signOut();
+                    ref.invalidate(currentUserModelProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tizimdan chiqdingiz.')),
+                      );
+                      context.go('/login');
+                    }
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('Hisobdan chiqish', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
           ],
         ),
       ),

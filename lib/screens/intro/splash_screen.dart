@@ -48,15 +48,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final prefs = await SharedPreferences.getInstance();
     final bool introSeen = prefs.getBool(AppConstants.keyIntroSeen) ?? false;
     final user = FirebaseAuth.instance.currentUser;
+    final savedEmail = prefs.getString('logged_in_email');
+    final bool isLoggedIn = user != null || (savedEmail != null && savedEmail.isNotEmpty);
 
     if (!mounted) return;
 
     if (!introSeen) {
       context.go('/intro');
-    } else if (user == null) {
-      context.go('/login');
+    } else if (isLoggedIn) {
+      if (savedEmail?.toLowerCase() == 'admen@gmail.com') {
+        context.go('/admin');
+      } else {
+        context.go('/');
+      }
     } else {
-      context.go('/');
+      context.go('/login');
     }
   }
 

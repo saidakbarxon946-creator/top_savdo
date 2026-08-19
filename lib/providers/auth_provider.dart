@@ -11,6 +11,12 @@ final authStateProvider = StreamProvider<User?>((ref) {
 
 final currentUserModelProvider = FutureProvider<UserModel?>((ref) async {
   final user = ref.watch(authStateProvider).value;
-  if (user == null) return null;
-  return ref.watch(authServiceProvider).getUserModel(user.uid);
+  final authService = ref.watch(authServiceProvider);
+
+  if (user != null) {
+    final model = await authService.getUserModel(user.uid);
+    if (model != null) return model;
+  }
+
+  return await authService.getSavedUserModel();
 });
