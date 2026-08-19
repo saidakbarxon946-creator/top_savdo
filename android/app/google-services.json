@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "913099050488",
+    "project_id": "topsavdo-2bc8a",
+    "storage_bucket": "topsavdo-2bc8a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:913099050488:android:915660e6a46ca92520da0d",
+        "android_client_info": {
+          "package_name": "com.example.top_savdo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkPkyzyFEQGp_j_-QlUP62O4DBpAJHRuI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
