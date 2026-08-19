@@ -218,6 +218,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   if (val != null) {
                     setState(() {
                       _selectedCategory = val;
+                      if (val != 'vehicles') {
+                        _mileageController.clear();
+                      }
                     });
                   }
                 },
@@ -260,17 +263,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Mileage Input (Mashina uchun bosgan masofasi - Probeg)
-              TextFormField(
-                controller: _mileageController,
-                keyboardType: TextInputType.text,
-                decoration: const InputDecoration(
-                  labelText: 'Bosgan masofasi / Probeg (Mashina va texnikalar uchun)',
-                  hintText: 'Masalan: 45 000 km (Yoki 0 km)',
-                  prefixIcon: Icon(Icons.speed_outlined),
+              // Mileage Input (Faqat Avtomobillar kategoriyasi uchun)
+              if (_selectedCategory == 'vehicles') ...[
+                TextFormField(
+                  controller: _mileageController,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    labelText: 'Bosgan masofasi / Probeg km (Avtomobil uchun)',
+                    hintText: 'Masalan: 45 000 km',
+                    prefixIcon: Icon(Icons.speed_outlined),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
               // Seller Phone Input (Telefon raqami)
               TextFormField(
