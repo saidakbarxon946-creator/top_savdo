@@ -8,6 +8,7 @@ import '../screens/add_product/add_product_screen.dart';
 import '../screens/favorites/favorites_screen.dart';
 import '../screens/my_ads/my_ads_screen.dart';
 import '../screens/chat/chat_list_screen.dart';
+import '../screens/chat/chat_room_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
@@ -63,6 +64,13 @@ class AppRouter {
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return ProductDetailScreen(productId: id);
+        },
+      ),
+      GoRoute(
+        path: '/chat/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ChatRoomScreen(chatId: id);
         },
       ),
       GoRoute(

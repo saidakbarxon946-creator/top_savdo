@@ -9,6 +9,7 @@ import '../../models/comment_model.dart';
 import '../../core/theme.dart';
 import '../../core/constants.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/chat_provider.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -527,7 +528,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => context.go('/chats'),
+                    onPressed: () {
+                      final chatId = ref.read(chatProvider.notifier).getOrCreateChatForProduct(product.id, product.sellerName);
+                      context.push('/chat/$chatId');
+                    },
                     icon: const Icon(Icons.chat_bubble_outline_rounded),
                     label: const Text('Chatda yozish'),
                   ),
