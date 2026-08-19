@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
+import '../../services/auth_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -157,6 +158,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Panel'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Bosh sahifa',
+            onPressed: () => context.go('/'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            tooltip: 'Tizimdan chiqish',
+            onPressed: () async {
+              final authService = AuthService();
+              await authService.signOut();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Admin hisobidan chiqdingiz.')),
+                );
+                context.go('/login');
+              }
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.primaryColor,
@@ -280,11 +302,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           ),
 
           // Tab 3: Users Control
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Card(
+                const Card(
                   child: ListTile(
                     leading: CircleAvatar(child: Text('A')),
                     title: Text('Admin User', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -292,12 +314,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                     trailing: Chip(label: Text('Admin'), backgroundColor: Colors.deepOrangeAccent),
                   ),
                 ),
-                Card(
+                const Card(
                   child: ListTile(
                     leading: CircleAvatar(child: Text('J')),
                     title: Text('Javohirbek (User)'),
                     subtitle: Text('javohir@gmail.com'),
                     trailing: Chip(label: Text('Active')),
+                  ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: const BorderSide(color: Colors.redAccent),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () async {
+                      final authService = AuthService();
+                      await authService.signOut();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Admin hisobidan chiqdingiz.')),
+                        );
+                        context.go('/login');
+                      }
+                    },
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Admin Panelidan Chiqish', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],
